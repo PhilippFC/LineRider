@@ -29,6 +29,7 @@ let endAngle;
 ////////////////PlayerLogic/////////////////////
 
 
+
 const Player = {
     x: 50,
     y: 50,              
