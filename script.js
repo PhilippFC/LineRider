@@ -30,66 +30,75 @@ let endAngle;
 
 
 
-const Player = {
+const p = {
     x: 50,
     y: 50,              
-    vx: 0,          //Velocity x
+    vx: 1,          //Velocity x
     vy: 1,          //Velocity y
-    ax: 0,          //Acceleration x
+    ax: 0.2,          //Acceleration x
     ay: 0,          //Acceleration y
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 100,
 
-    maxyspeed: 20,
-    c: "#ff02ff"
+    maxyspeed: 30,
+    c: "#7cb2c4"
 }
 
 function drawPlayer(){
-    ctx.fillStyle = Player.c;
-    ctx.fillRect(Player.x,Player.y,Player.width,Player.height);
+    ctx.fillStyle = p.c;
+    //rotate(25);
+    ctx.fillRect(p.x,p.y,p.width,p.height);
+    ctx.restore();
 }
 function movePlayer(){
     if(colliding() === true){
-
         //Rotation, work in progress
         // ctx.translate(player.x + player.width/2,player.y +player.y/2);
         // let angle = 1;
         // ctx.rotate(angle);
         // angle++;
-        
-        Player.vy = 0;
-        if(Player.x <  GAME_HEIGHT){
-            Player.x += Player.vx;
-        }else{
-            Player.x = 0;
-        }
-        return;
-    }
 
-    if(Player.vy < Player.maxyspeed)Player.vy+= ay;
-    if(Player.y <  GAME_HEIGHT){
-        Player.y += Player.vy;
+        p.vy = p.vy/2;
+        if(p.x <  GAME_HEIGHT){
+            p.x += p.vx;
+        }else{
+            p.x = 0;
+        }
+    }
+    if(p.vy < p.maxyspeed)p.vy+= p.ay;
+    if(p.y <  GAME_HEIGHT){
+        p.y += p.vy;
     }else{
-        Player.y = 0;
+        p.y = 0;
     }
     // console.log("dx = " + player.x);
     // console.log("dy = " + player.y);
 }
+function rotate(deg){
+    ctx.save();
+    var rad = deg*Math.PI / 180;
+    ctx.translate(p.x + p.width/2,p.y +p.height/2);
+    ctx.rotate(rad);
+}
+
 function colliding(){
-
-    const colliderx = p.x;
-    const collidery = p.y + p.height;
-    let colliderheight = 100;
-    // console.log("x "+coliderx);
-    // console.log("y "+colidery);
-    if(p.yspeed > p.maxyspeed-1)colliderheight ++;
-
-    const p = ctx.getImageData(colliderx,collidery,p.width,colliderheight).data;
-    // console.log(p);
-    var hex = "#" + ("000000" + rgbToHex(p[0], p[1], p[2])).slice(-6);
-    // console.log(hex);
-    if(hex !== "#000000")p.c = hex;
-    if(hex === "#0000ff") return true;
+    //Colliderbox wird festgelegt
+    const colx = p.x;
+    const coly = p.y;
+    const colheight = p.height;
+    const colwidth = p.width;
+    //Pixeldaten aus dem festgelegten Bereich werden als rgba im Array gespeichert
+    const colData = ctx.getImageData(colx,coly,colwidth,colheight).data;
+    //console.log(colData.length);
+    //filtert diesen Array nach Werten die nicht 0 sind (nicht weiß)
+    const myArray = colData.filter(function(element){
+        return element >0;
+    });
+    console.log(myArray.length);
+    if(myArray.length > 0){
+            p.x += p.vx;
+            return true;
+    }
 
 }
 function rgbToHex(r, g, b) {
@@ -107,15 +116,15 @@ function clear(){
 function gameLoop(){
     clear();
     // console.log(img);
-    ctx.drawImage(img,0,0)
-    // movePlayer();
-    // drawPlayer();
+    ctx.drawImage(img,0,0);
+    movePlayer();
+    drawPlayer();
 
     myRequest = requestAnimationFrame(gameLoop);
 }
 
 
-/////////////////////////////////////////////
+////////////////////// Drawing / Utilities ///////////////////////
 function getMousePos(event) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -179,7 +188,6 @@ function setEndPoint(event){
     }
     ctx.stroke();
 }
-
 canvas.addEventListener("mousedown",setStartPoint);
 canvas.addEventListener("mouseup",setEndPoint);
 
@@ -188,8 +196,6 @@ function showGame(){
     document.getElementById("hidewrapper").style.display = "block";
     document.getElementById("startwrapper").style.display = "none";
 }
-
-
 function cancelPlay(){
     window.cancelAnimationFrame(myRequest);
 }
@@ -224,11 +230,11 @@ function playState(){
 function stopState(){
     if(GameState !== "play") return;
     cancelPlay();
-    Player.c1 = 
-    Player.x = 50;
-    Player.y = 50;
-    Player.vy = 0;
-    Player.vx = 1;
+    p.c1 = 
+    p.x = 50;
+    p.y = 50;
+    p.vy = 1;
+    p.vx = 1;
     GameState = "stop";
     console.log("State = " + GameState);
 
@@ -242,10 +248,9 @@ function stopState(){
 document.getElementById("buildButton").addEventListener("click",buildState);
 document.getElementById("playButton").addEventListener("click",playState);
 document.getElementById("stopButton").addEventListener("click",stopState);
-
 document.getElementById("startButton").addEventListener("click",showGame);
 
-/////////Tools//////////
+////////////////////Tools//////////////////////////////
 function toolChange(event){
     if(event.target === pen) tool = "pen";
     if(event.target === eraser) tool = "eraser";
@@ -258,10 +263,3 @@ const eraser = document.getElementById("eraser");
 eraser.addEventListener("click", toolChange);
 const curver = document.getElementById("curver");
 curver.addEventListener("click", toolChange);
-
-
-//////////INPUTS/////////
-
-document.addEventListener("keydown",function keydown(event){
-    if(event.key === "w" || "W")console.log("w");
-});
