@@ -6,23 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300&display=swap');
+    </style> 
     <title>theGame 2.0</title>
 </head>
 <body>
-    <h1 id="title"></h1>
-    <canvas id="myCanvas">
-    </canvas>
+    <div id="startwrapper">
+        <h1 id="title">theGame</h1>
+        <button id="startButton">Start Game</button>
+        <button id="tutButton">Tutorial</button>
+    </div>
 
-    <div class="uiwrapper">
-        <div class="toolswrapper">
-            <button class="tool" id="pen">pen</button>
-            <button class="tool" id="eraser">eraser</button>
-            <button class="tool" id="curver">curver</button>
-        </div>
-        <div class="statewrapper">
-            <button id="buildButton">Build</button>
-            <button id="playButton">Play</button>
-            <button id="stopButton">Stop</button>
+    <div id="hidewrapper">
+        <canvas id="myCanvas">
+        </canvas>
+
+        <div class="uiwrapper">
+            <div class="toolswrapper">
+                <button class="tool" id="pen">pen</button>
+                <button class="tool" id="eraser">eraser</button>
+                <button class="tool" id="curver">curver</button>
+            </div>
+            <div class="statewrapper">
+                <button id="buildButton">Build</button>
+                <button id="playButton">Play</button>
+                <button id="stopButton">Stop</button>
+            </div>
         </div>
     </div>
 </body>

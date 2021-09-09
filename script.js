@@ -34,7 +34,7 @@ const Player = {
     x: 50,
     y: 50,              
     vx: 0,          //Velocity x
-    vy: 1,      //Velocity y
+    vy: 1,          //Velocity y
     ax: 0,          //Acceleration x
     ay: 0,          //Acceleration y
     width: 50,
@@ -184,6 +184,12 @@ canvas.addEventListener("mousedown",setStartPoint);
 canvas.addEventListener("mouseup",setEndPoint);
 
 /////////////////State & Button Logic////////////////////
+function showGame(){
+    document.getElementById("hidewrapper").style.display = "block";
+    document.getElementById("startwrapper").style.display = "none";
+}
+
+
 function cancelPlay(){
     window.cancelAnimationFrame(myRequest);
 }
@@ -236,6 +242,8 @@ function stopState(){
 document.getElementById("buildButton").addEventListener("click",buildState);
 document.getElementById("playButton").addEventListener("click",playState);
 document.getElementById("stopButton").addEventListener("click",stopState);
+
+document.getElementById("startButton").addEventListener("click",showGame);
 
 /////////Tools//////////
 function toolChange(event){

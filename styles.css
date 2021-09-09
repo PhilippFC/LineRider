@@ -6,7 +6,9 @@ body{
     flex-direction: column;
     background: rgb(137,164,162);
     background: linear-gradient(160deg, rgba(137,164,162,1) 0%, rgba(54,170,133,0.650997150997151) 39%, rgba(150,93,199,1) 100%); 
+    font-family: 'Noto Sans KR', sans-serif;
 }
+
 html, body{
     width:100%;
     margin: 0;
@@ -15,11 +17,22 @@ body, p, h1, h2, h3{
     margin:0;
     cursor: default;
 }
+button{
+    cursor: pointer;
+    margin: 1em;
+    padding:0.5em;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 600;
+}
 #title{
     margin:1em;
     font-size: 2.5em;
     color:white;
     
+}
+#hidewrapper{
+    top:2em;
+    display:none;
 }
 canvas{
     cursor:pointer;
@@ -46,7 +59,4 @@ canvas{
 .statewrapper >*{
     margin:1em;
     padding: 1em;
-}
-button{
-    cursor: pointer;
 }
