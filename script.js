@@ -1,7 +1,8 @@
 
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
-let myRequest;
+let playRequest;
+let buildRequest;
 
 const GAME_WIDTH = 600;
 const GAME_HEIGHT = 400;
@@ -14,7 +15,7 @@ canvas.style.background = "white";
 
 let img = new Image();
 
-let GameState = "build";
+let gameState = "build";
 let tool = "pen";
 let pos1;
 let pos2;
@@ -26,6 +27,8 @@ let beta;
 let startAngle;
 let endAngle;
 
+let lineCount = 0;
+const lines = [];
 /////////////////Vector/////////////
 
 class Vector{
@@ -49,6 +52,7 @@ class Vector{
 
 ////////////////PlayerLogic/////////////////////
 
+
 class Player{
     constructor(x,y,r,velx,vely,aclx,acly,c){
         this.x =  x;
@@ -60,13 +64,14 @@ class Player{
         this.vely = vely;
         this.vel = new Vector(this.velx,this.vely);    
         this.initVel = this.vel;
-
+        
         this.aclx = aclx;
         this.acly = acly;
         this.acl = new Vector(aclx,acly);
         this.maxVel = 30;
-        this.bremse = -0.9;
+        this.bremse = -0.1;
         this.c = c;
+        
     }
 
     move(){
@@ -79,7 +84,6 @@ class Player{
 
         //check for Walls
         if(this.checkcollide()){
-            this.vel.x ++;
             this.vel.y *= this.bremse;     
             this.pos.y = Math.floor(this.pos.y);   
         }
@@ -131,8 +135,6 @@ class Player{
 
 }
 
-
-
 ////////////////loop/////////////////////
 
 function clear(){
@@ -145,11 +147,63 @@ function gameLoop(){
     p.move();
     p.draw();
     // console.log(img);
-    myRequest = requestAnimationFrame(gameLoop);
+    playRequest = requestAnimationFrame(gameLoop);
+}
+function buildLoop(){
+    clear();
+    console.log("buildloooping");
+    lines.forEach(function(line){
+        line.draw()
+    });
+    buildRequest = requestAnimationFrame(buildLoop);
 }
 
+class Line{
+    constructor(event){
+        this.pos1 = getMousePos(event)
+        this.pos2 ={
+            x:this.pos1.x,
+            y:this.pos1.y
+        };
+    }
+    draw(){
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#141E30';
+        ctx.beginPath();
+        ctx.moveTo(this.pos1.x, this.pos1.y);
+        if(tool === "pen"){
+            ctx.lineTo(this.pos2.x,this.pos2.y);
+            ctx.closePath();    
+        }
+        ctx.stroke();
+    }
+    setEnd(event){
+        this.pos2 = getMousePos(event); 
+    }
+}
 
 ////////////////////// Drawing / Utilities ///////////////////////
+function mouseDown(event){
+    if(gameState !== "build") return;
+    if(tool !== "eraser"){
+        lineCount++;
+        line = new Line(event);
+        lines.push(line);
+    }else{
+        console.log("pop");
+        lineCount --;
+        lines.pop();
+    }
+    console.log(lines);
+    
+}
+
+function mouseUp(event){
+    if(gameState !== "build") return;
+    lines[lineCount-1].setEnd(event);
+    lines[lineCount-1].draw();
+}
+
 function getMousePos(event) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -157,114 +211,43 @@ function getMousePos(event) {
         y: event.clientY -rect.top,
     }
 }
-function setStartPoint(event){
-    if(GameState !== "build") return;
-    pos1 = getMousePos(event);
-    // console.log(pos1);
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = 'blue';
-    ctx.beginPath();
-    ctx.moveTo(pos1.x, pos1.y);
-    
-}
-function setEndPoint(event){
-    if(GameState !== "build") return;
-    pos2 = getMousePos(event);
-    if(tool === "pen"){
-        ctx.lineTo(pos2.x,pos2.y);
-        ctx.closePath();    
-    }
-    if(tool === "curver"){
-        const center={
-            x: pos1.x + ((pos2.x-pos1.x)/2), 
-            y: pos1.y + ((pos2.y-pos1.y)/2)
-        }
-        radius = Math.sqrt(((pos2.x-pos1.x)**2) + ((pos2.y-pos1.y)**2))/2;
-        const cp1={
-            x: center.x - radius,
-            y: center.y 
-        };
-        const cp2={
-            x: center.x,
-            y: center.y + radius 
-        };
-        ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,pos2.x,pos2.y);
-        
-        ctx.moveTo(pos2.x,pos2.y);
-        ctx.closePath();
-        
-        //my try an Kurven ohne toBezierCurve()
-        // // k1 ist die Ankathe
-        // k1 = pos2.y - pos1.y;
-        // // console.log("k1 = " + k1);
-        // a1 = Math.acos(k1/radius);
-        // console.log(a1);
-
-        // startAngle = a1;
-        // endAngle = Math.PI;
-    
-        // // console.log("Radius = " +Math.round(radius));
-        // // console.log("center.x = "+Math.round(center.x));
-        // // console.log("center.y = "+Math.round(center.y));
-
-        // ctx.moveTo(center.x,center.y);
-        // ctx.arc(center.x, center.y, radius, startAngle, endAngle, true);
-        // ctx.closePath();
-    }
-    ctx.stroke();
-}
-canvas.addEventListener("mousedown",setStartPoint);
-canvas.addEventListener("mouseup",setEndPoint);
+canvas.addEventListener("mousedown",mouseDown);
+canvas.addEventListener("mouseup",mouseUp);
 
 /////////////////State & Button Logic////////////////////
 function showGame(){
     document.getElementById("hidewrapper").style.display = "block";
     document.getElementById("startwrapper").style.display = "none";
+    buildRequest = requestAnimationFrame(buildLoop);
 }
 function cancelPlay(){
-    window.cancelAnimationFrame(myRequest);
+    window.cancelAnimationFrame(playRequest);
+}
+function cancelBuild(){
+    window.cancelAnimationFrame(buildRequest);
 }
 function buildState(){
     cancelPlay();
     clear();
-    GameState = "build";
-    console.log("State = " + GameState);
-
-    document.getElementById("stopButton").style.background = "";
-    document.getElementById("playButton").style.background = "";
-    document.getElementById("buildButton").style.background = "grey";
-    
-    document.body.style.background = "rgb(137,164,162)"
-    document.body.style.background = "linear-gradient(160deg, rgba(137,164,162,1) 0%, rgba(54,170,133,0.650997150997151) 39%, rgba(150,93,199,1) 100%)"
+    gameState = "build";
+    buildRequest = requestAnimationFrame(buildLoop);
 }
 function playState(){
-    if(GameState === "build")img.src = canvas.toDataURL("image/png");
-    if(GameState === "play")return;
-    GameState = "play";
-    p = new Player(100,100,25,0,1,0,0.5,"lightblue");
-    console.log("State = " + GameState);
-    
-    myRequest = requestAnimationFrame(gameLoop);
-    
-    document.getElementById("stopButton").style.background = "";
-    document.getElementById("playButton").style.background = "grey";
-    document.getElementById("buildButton").style.background = "";
-    
-    document.body.style.background = "rgb(124,226,114)"
-    document.body.style.background = "linear-gradient(160deg, rgba(124,226,114,0.9052754891018908) 8%, rgba(93,95,199,1) 100%)"
+    if(gameState === "build"){
+        img.src = canvas.toDataURL("image/png");
+        cancelBuild();
+    }
+    if(gameState === "play")return;
+    gameState = "play";
+    p = new Player(100,100,25,0,1,0,0.5,"#4b6584");
+    playRequest = requestAnimationFrame(gameLoop);
 }
 function stopState(){
-    if(GameState !== "play") return;
+    if(gameState !== "play") return;
     cancelPlay();
-    GameState = "stop";
-    console.log("State = " + GameState);
-
-    document.getElementById("stopButton").style.background = "grey";
-    document.getElementById("playButton").style.background = "";
-    document.getElementById("buildButton").style.background = "";
-    
-    document.body.style.background = "rgb(115,2,84)"
-    document.body.style.background = "linear-gradient(160deg, rgba(115,2,84,0.5663399148721988) 5%, rgba(221,240,166,1) 100%)"
+    cancelBuild();
+    gameState = "stop";
+    console.log("State = " + gameState);
 }
 document.getElementById("buildButton").addEventListener("click",buildState);
 document.getElementById("playButton").addEventListener("click",playState);
@@ -272,15 +255,20 @@ document.getElementById("stopButton").addEventListener("click",stopState);
 document.getElementById("startButton").addEventListener("click",showGame);
 
 ////////////////////Tools//////////////////////////////
-function toolChange(event){
-    if(event.target === pen) tool = "pen";
-    if(event.target === eraser) tool = "eraser";
-    if(event.target === curver) tool = "curver";
-    console.log("tool = " + tool);
+function erase(){
+    console.log("pop");
+    lineCount --;
+    lines.pop();
+    console.log(lines);
 }
+
 const pen = document.getElementById("pen");
-pen.addEventListener("click", toolChange);
-const eraser = document.getElementById("eraser");
-eraser.addEventListener("click", toolChange);
+pen.addEventListener("click", function(){
+    tool = "pen";
+});
 const curver = document.getElementById("curver");
-curver.addEventListener("click", toolChange);
+curver.addEventListener("click", function(){
+    tool = "curver";
+});
+const eraser = document.getElementById("eraser");
+eraser.addEventListener("click", erase);

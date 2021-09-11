@@ -4,9 +4,10 @@ body{
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    background: rgb(137,164,162);
-    background: linear-gradient(160deg, rgba(137,164,162,1) 0%, rgba(54,170,133,0.650997150997151) 39%, rgba(150,93,199,1) 100%); 
-    font-family: 'Noto Sans KR', sans-serif;
+    background: #141E30;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #243B55, #141E30);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #243B55, #141E30); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    
 }
 
 html, body{
@@ -18,11 +19,18 @@ body, p, h1, h2, h3{
     cursor: default;
 }
 button{
+    border-radius: 5px;
     cursor: pointer;
     margin: 1em;
     padding:0.5em;
     font-family: 'Noto Sans KR', sans-serif;
     font-weight: 400;
+    background:#d1d8e0;
+    color: ##4b6584;
+}
+button:focus{
+    background:#4b6584;
+    color:#d1d8e0;
 }
 #title{
     margin:1em;
