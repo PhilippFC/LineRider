@@ -26,86 +26,111 @@ let beta;
 let startAngle;
 let endAngle;
 
+/////////////////Vector/////////////
+
+class Vector{
+    constructor(x,y){
+        this.x = x;
+        this.y = y;
+    }
+    add(v){
+        return new Vector(this.x+v.x, this.y+v.y);
+    }
+    subtract(v){
+        return new Vector(this.x-v.x, this.y-v.y);
+    }
+    magnitude(v){
+        return Math.sqrt(this.x**2 + HTMLDListElement.y**2);
+    } 
+    mult(n){
+        return new Vector(this.x*n, this.y*n);
+    }
+}
+
 ////////////////PlayerLogic/////////////////////
 
+class Player{
+    constructor(x,y,r,velx,vely,aclx,acly,c){
+        this.x =  x;
+        this.y = y;
+        this.r = r;
+        this.pos = new Vector(this.x,this.y);
+        this.initPos = this.pos;
+        this.velx = velx;
+        this.vely = vely;
+        this.vel = new Vector(this.velx,this.vely);    
+        this.initVel = this.vel;
+
+        this.aclx = aclx;
+        this.acly = acly;
+        this.acl = new Vector(aclx,acly);
+        this.maxVel = 30;
+        this.bremse = -0.9;
+        this.c = c;
+    }
+
+    move(){
+        if(this.vel.x < this.maxVel) this.vel.x = this.vel.x += this.acl.x;
+        if(this.vel.y < this.maxVel) this.vel.y = this.vel.y += this.acl.y;
+
+        this.pos.x += this.vel.x ;
+        this.pos.y += this.vel.y ;
 
 
-const p = {
-    x: 50,
-    y: 50,              
-    vx: 1,          //Velocity x
-    vy: 1,          //Velocity y
-    ax: 0.2,          //Acceleration x
-    ay: 0,          //Acceleration y
-    width: 100,
-    height: 100,
-
-    maxyspeed: 30,
-    c: "#7cb2c4"
-}
-
-function drawPlayer(){
-    ctx.fillStyle = p.c;
-    //rotate(25);
-    ctx.fillRect(p.x,p.y,p.width,p.height);
-    ctx.restore();
-}
-function movePlayer(){
-    if(colliding() === true){
-        //Rotation, work in progress
-        // ctx.translate(player.x + player.width/2,player.y +player.y/2);
-        // let angle = 1;
-        // ctx.rotate(angle);
-        // angle++;
-
-        p.vy = p.vy/2;
-        if(p.x <  GAME_HEIGHT){
-            p.x += p.vx;
-        }else{
-            p.x = 0;
+        //check for Walls
+        if(this.checkcollide()){
+            this.vel.x ++;
+            this.vel.y *= this.bremse;     
+            this.pos.y = Math.floor(this.pos.y);   
+        }
+        if (this.pos.y > GAME_HEIGHT - this.r) {
+            this.vel.y *= this.bremse;
+            this.pos.y = GAME_HEIGHT - this.r;
+        }
+        if (this.pos.x > GAME_WIDTH - this.r) {
+            this.vel.x *= this.bremse;
+            this.pos.x = GAME_WIDTH - this.r;
+        }
+        if (this.pos.x < this.r) {
+            this.vel.x *= this.bremse;
+            this.pos.x = this.r;
         }
     }
-    if(p.vy < p.maxyspeed)p.vy+= p.ay;
-    if(p.y <  GAME_HEIGHT){
-        p.y += p.vy;
-    }else{
-        p.y = 0;
+    draw(){
+        ctx.beginPath();
+        ctx.arc(this.pos.x,this.pos.y, this.r, 0, 2 * Math.PI, false);
+        ctx.fillStyle = this.c;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
     }
-    // console.log("dx = " + player.x);
-    // console.log("dy = " + player.y);
-}
-function rotate(deg){
-    ctx.save();
-    var rad = deg*Math.PI / 180;
-    ctx.translate(p.x + p.width/2,p.y +p.height/2);
-    ctx.rotate(rad);
-}
 
-function colliding(){
-    //Colliderbox wird festgelegt
-    const colx = p.x;
-    const coly = p.y;
-    const colheight = p.height;
-    const colwidth = p.width;
-    //Pixeldaten aus dem festgelegten Bereich werden als rgba im Array gespeichert
-    const colData = ctx.getImageData(colx,coly,colwidth,colheight).data;
-    //console.log(colData.length);
-    //filtert diesen Array nach Werten die nicht 0 sind (nicht weiß)
-    const myArray = colData.filter(function(element){
-        return element >0;
-    });
-    console.log(myArray.length);
-    if(myArray.length > 0){
+    checkcollide(){
+        //Colliderbox wird festgelegt
+        const colx = this.pos.x;
+        const coly = this.pos.y;
+        const colr = this.r;
+        //Pixeldaten aus dem festgelegten Bereich werden als rgba im Array gespeichert
+        const colData = ctx.getImageData(colx-colr,coly-colr,colr*2,colr*2).data;
+        //console.log(colData);
+        // ctx.fillRect(colx-colr,coly-colr,colr*2,colr*2);
+        //filtert diesen Array nach Werten die nicht 0 sind (nicht weiß)
+        const myArray = colData.filter(function(element){
+            return element >0;
+        });
+        //console.log(myArray.length);
+        if(myArray.length > 0){
             p.x += p.vx;
             return true;
+        }
+    }
+    rotate(){
+
     }
 
 }
-function rgbToHex(r, g, b) {
-    if (r > 255 || g > 255 || b > 255)
-        throw "Invalid color component";
-    return ((r << 16) | (g << 8) | b).toString(16);
-}
+
 
 
 ////////////////loop/////////////////////
@@ -115,11 +140,11 @@ function clear(){
 }
 function gameLoop(){
     clear();
-    // console.log(img);
     ctx.drawImage(img,0,0);
-    movePlayer();
-    drawPlayer();
-
+    p.checkcollide();
+    p.move();
+    p.draw();
+    // console.log(img);
     myRequest = requestAnimationFrame(gameLoop);
 }
 
@@ -216,6 +241,7 @@ function playState(){
     if(GameState === "build")img.src = canvas.toDataURL("image/png");
     if(GameState === "play")return;
     GameState = "play";
+    p = new Player(100,100,25,0,1,0,0.5,"lightblue");
     console.log("State = " + GameState);
     
     myRequest = requestAnimationFrame(gameLoop);
@@ -230,11 +256,6 @@ function playState(){
 function stopState(){
     if(GameState !== "play") return;
     cancelPlay();
-    p.c1 = 
-    p.x = 50;
-    p.y = 50;
-    p.vy = 1;
-    p.vx = 1;
     GameState = "stop";
     console.log("State = " + GameState);
 

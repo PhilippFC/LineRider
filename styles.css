@@ -22,13 +22,18 @@ button{
     margin: 1em;
     padding:0.5em;
     font-family: 'Noto Sans KR', sans-serif;
-    font-weight: 600;
+    font-weight: 400;
 }
 #title{
     margin:1em;
     font-size: 2.5em;
     color:white;
     
+}
+.startwrapper{
+    display:flex;
+    justify-content: center;
+    align-items: center;
 }
 #hidewrapper{
     top:2em;
@@ -41,6 +46,8 @@ canvas{
 }
 .uiwrapper{
     display:flex;
+    justify-content: center;
+    align-items: center;
 }
 .toolswrapper{
     display: flex;
