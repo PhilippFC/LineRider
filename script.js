@@ -111,52 +111,20 @@ class Player{
     }
 
     checkcollide(){
-        //Colliderbox wird festgelegt
-        const colx = this.pos.x;
-        const coly = this.pos.y;
-        const colr = this.r;
-        //Pixeldaten aus dem festgelegten Bereich werden als rgba im Array gespeichert
-        const colData = ctx.getImageData(colx-colr,coly-colr,colr*2,colr*2).data;
-        //console.log(colData);
-        // ctx.fillRect(colx-colr,coly-colr,colr*2,colr*2);
-        //filtert diesen Array nach Werten die nicht 0 sind (nicht weiß)
-        const myArray = colData.filter(function(element){
-            return element >0;
+        lines.forEach((line) => {//durch arrowfunction ist this das Playerobjekt
+            line.collide(this);
         });
-        //console.log(myArray.length);
-        if(myArray.length > 0){
-            p.x += p.vx;
-            return true;
-        }
     }
     rotate(){
 
     }
 
 }
+function createPlayer(){
+    p = new Player(100,100,25,0,1,0,0.5,"#4b6584");
+}
 
-////////////////loop/////////////////////
-
-function clear(){
-    ctx.clearRect(0,0,GAME_WIDTH,GAME_HEIGHT);
-}
-function gameLoop(){
-    clear();
-    ctx.drawImage(img,0,0);
-    p.checkcollide();
-    p.move();
-    p.draw();
-    // console.log(img);
-    playRequest = requestAnimationFrame(gameLoop);
-}
-function buildLoop(){
-    clear();
-    console.log("buildloooping");
-    lines.forEach(function(line){
-        line.draw()
-    });
-    buildRequest = requestAnimationFrame(buildLoop);
-}
+//////////////////////Line/////////////////////
 
 class Line{
     constructor(event){
@@ -165,21 +133,67 @@ class Line{
             x:this.pos1.x,
             y:this.pos1.y
         };
+        this.E = new Vector(99999,0);
+        this.BE = new Vector();
+        this.AB = new Vector(); 
+        this.BD = new Vector();
+        this.CD = new Vector(); //wenn CD kleiner als p.r ist == Collision
+        this.ABE;
+        this.DBE;
+        this.CBD;
     }
     draw(){
         ctx.lineWidth = 5;
         ctx.strokeStyle = '#141E30';
         ctx.beginPath();
         ctx.moveTo(this.pos1.x, this.pos1.y);
-        if(tool === "pen"){
-            ctx.lineTo(this.pos2.x,this.pos2.y);
-            ctx.closePath();    
-        }
+        ctx.lineTo(this.pos2.x,this.pos2.y);
+        ctx.closePath();    
+        
         ctx.stroke();
     }
     setEnd(event){
         this.pos2 = getMousePos(event); 
+        this.E.y = this.pos2.y;
     }
+    collide(p){
+        this.AB = this.pos2.subtract(this.pos1);
+        console.log("E.x " + this.E.x + "e.y " + this.E.y);
+        this.BE = this.E.subtract(this.pos2);
+        console.log(this.BE);
+        // console.log(this.pos2.subtract(this.pos1));
+
+        // if(){
+        //     console.log("true");
+        //     return true;
+        // }else{
+        //     return false;
+        // }
+    }
+}
+
+////////////////loops/////////////////////
+
+function clear(){
+    ctx.clearRect(0,0,GAME_WIDTH,GAME_HEIGHT);
+}
+function gameLoop(){
+    clear();
+    lines.forEach(function(line){
+        line.draw()
+    });
+    p.checkcollide();
+    p.move();
+    p.draw();
+    playRequest = requestAnimationFrame(gameLoop);
+}
+function buildLoop(){
+    clear();
+    lines.forEach(function(line){
+        line.draw()
+    });
+    p.draw();
+    buildRequest = requestAnimationFrame(buildLoop);
 }
 
 ////////////////////// Drawing / Utilities ///////////////////////
@@ -206,10 +220,7 @@ function mouseUp(event){
 
 function getMousePos(event) {
     const rect = canvas.getBoundingClientRect();
-    return {
-        x: event.clientX -rect.left,
-        y: event.clientY -rect.top,
-    }
+    return new Vector(event.clientX -rect.left,event.clientY -rect.top);
 }
 canvas.addEventListener("mousedown",mouseDown);
 canvas.addEventListener("mouseup",mouseUp);
@@ -218,7 +229,9 @@ canvas.addEventListener("mouseup",mouseUp);
 function showGame(){
     document.getElementById("hidewrapper").style.display = "block";
     document.getElementById("startwrapper").style.display = "none";
+    createPlayer();
     buildRequest = requestAnimationFrame(buildLoop);
+
 }
 function cancelPlay(){
     window.cancelAnimationFrame(playRequest);
@@ -230,20 +243,20 @@ function buildState(){
     cancelPlay();
     clear();
     gameState = "build";
+    createPlayer();
     buildRequest = requestAnimationFrame(buildLoop);
 }
 function playState(){
-    if(gameState === "build"){
-        img.src = canvas.toDataURL("image/png");
-        cancelBuild();
-    }
     if(gameState === "play")return;
+    cancelBuild();
     gameState = "play";
-    p = new Player(100,100,25,0,1,0,0.5,"#4b6584");
+    createPlayer();
     playRequest = requestAnimationFrame(gameLoop);
+
 }
 function stopState(){
-    if(gameState !== "play") return;
+    if(gameState === "stop") return;
+
     cancelPlay();
     cancelBuild();
     gameState = "stop";
@@ -256,9 +269,15 @@ document.getElementById("startButton").addEventListener("click",showGame);
 
 ////////////////////Tools//////////////////////////////
 function erase(){
-    console.log("pop");
-    lineCount --;
-    lines.pop();
+    if(gameState !== "build"){
+        alert("not in Buildmode");
+        return;
+    }
+    if(lineCount > 0){
+        lineCount --;
+        console.log("pop");
+        lines.pop();
+    }
     console.log(lines);
 }
 
