@@ -42,12 +42,30 @@ class Vector{
     subtract(v){
         return new Vector(this.x-v.x, this.y-v.y);
     }
-    magnitude(v){
-        return Math.sqrt(this.x**2 + HTMLDListElement.y**2);
+    magnitude(){ //returns length of vector
+        return Math.sqrt(this.x**2 + this.y**2);
     } 
     mult(n){
         return new Vector(this.x*n, this.y*n);
     }
+    normal(){
+        return new Vector(-this.y,this.x).unit();
+    }
+    unit(){
+        if(this.magnitude() === 0){
+            return new Vector(0,0);
+        } else {
+            return new Vector(this.x/this.magnitude(), this.y/this.magnitude());
+        }
+    }
+    dotProduct(v){ //Skalarprodukt (returned eine Zahl)
+        // console.log(this.x * v.x + this.y * v.y);
+        return this.x * v.x + this.y * v.y;
+    }
+    
+}
+function radToDeg(radians){
+  return radians * (180/Math.PI); 
 }
 
 ////////////////PlayerLogic/////////////////////
@@ -82,11 +100,7 @@ class Player{
         this.pos.y += this.vel.y ;
 
 
-        //check for Walls
-        if(this.checkcollide()){
-            this.vel.y *= this.bremse;     
-            this.pos.y = Math.floor(this.pos.y);   
-        }
+        //checks for Walls
         if (this.pos.y > GAME_HEIGHT - this.r) {
             this.vel.y *= this.bremse;
             this.pos.y = GAME_HEIGHT - this.r;
@@ -110,9 +124,9 @@ class Player{
         ctx.stroke();
     }
 
-    checkcollide(){
+    checkCollisions(){
         lines.forEach((line) => {//durch arrowfunction ist this das Playerobjekt
-            line.collide(this);
+            // line.collide(this);
         });
     }
     rotate(){
@@ -128,48 +142,99 @@ function createPlayer(){
 
 class Line{
     constructor(event){
-        this.pos1 = getMousePos(event)
-        this.pos2 ={
-            x:this.pos1.x,
-            y:this.pos1.y
-        };
-        this.E = new Vector(99999,0);
-        this.BE = new Vector();
+        this.A = getMousePos(event);
+        this.B = this.A;
+
+        //Vektoren zwischen Punkten A,B und Player (P)
         this.AB = new Vector(); 
-        this.BD = new Vector();
-        this.CD = new Vector(); //wenn CD kleiner als p.r ist == Collision
-        this.ABE;
-        this.DBE;
-        this.CBD;
+        this.AP = new Vector();
+        this.BP = new Vector();
+
+        //Winkel zwischen Vektoren 
+        this.PAB;
+
     }
     draw(){
         ctx.lineWidth = 5;
         ctx.strokeStyle = '#141E30';
-        ctx.beginPath();
-        ctx.moveTo(this.pos1.x, this.pos1.y);
-        ctx.lineTo(this.pos2.x,this.pos2.y);
-        ctx.closePath();    
         
+        // ctx.fillRect(this.A.x-5,this.A.y-5,10,10);
+        // ctx.fillRect(this.B.x-5,this.B.y-5,10,10);
+
+        ctx.beginPath();
+        ctx.moveTo(this.A.x, this.A.y);
+        ctx.lineTo(this.B.x,this.B.y);
+        ctx.closePath();    
         ctx.stroke();
+
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.A.x, this.A.y);
+        ctx.lineTo(p.pos.x,p.pos.y);
+        ctx.closePath();  
+        ctx.stroke();  
+        
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.B.x, this.B.y);
+        ctx.lineTo(p.pos.x,p.pos.y);
+        ctx.closePath();  
+        ctx.stroke();  
+
     }
     setEnd(event){
-        this.pos2 = getMousePos(event); 
-        this.E.y = this.pos2.y;
+        this.B = getMousePos(event); 
     }
-    collide(p){
-        this.AB = this.pos2.subtract(this.pos1);
-        console.log("E.x " + this.E.x + "e.y " + this.E.y);
-        this.BE = this.E.subtract(this.pos2);
-        console.log(this.BE);
-        // console.log(this.pos2.subtract(this.pos1));
 
-        // if(){
-        //     console.log("true");
-        //     return true;
-        // }else{
-        //     return false;
-        // }
+    drawCPV(p){
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.closestWayTo(p).x,this.closestWayTo(p).y);
+        ctx.lineTo(p.pos.x,p.pos.y);
+        ctx.closePath();  
+        ctx.stroke();  
     }
+ 
+    closestWayTo(p){
+
+        let PzuA = this.A.subtract(p.pos);
+        if(this.lineUnitVec().dotProduct(PzuA) > 0){
+            return this.A;
+        }
+
+        let BzuP = p.pos.subtract(this.B); 
+        if(this.lineUnitVec().dotProduct(BzuP) > 0){
+            return this.B;
+        }
+
+        let closestDistance = this.lineUnitVec().dotProduct(PzuA);
+        let closestVector = this.lineUnitVec().mult(closestDistance);
+
+        return this.A.subtract(closestVector);
+
+    }
+
+    check4Colwith(p){
+        console.log(this.closestWayTo(p).magnitude());
+        if(this.closestWayTo(p).magnitude() < p.r){
+            console.log("collision");
+            return true;
+        }
+    }
+
+    lineUnitVec(){
+        return this.B.subtract(this.A).unit();
+    }
+
+    // collide(p){
+    //     this.AB = this.B.subtract(this.A);
+    //     this.AP = p.pos.subtract(this.A);
+    //     this.BP = p.pos.subtract(this.B);
+        
+    // }
 }
 
 ////////////////loops/////////////////////
@@ -179,12 +244,13 @@ function clear(){
 }
 function gameLoop(){
     clear();
-    lines.forEach(function(line){
-        line.draw()
-    });
-    p.checkcollide();
     p.move();
     p.draw();
+    lines.forEach(function(line){
+        line.draw()
+        line.drawCPV(p);
+        line.check4Colwith(p);
+    });
     playRequest = requestAnimationFrame(gameLoop);
 }
 function buildLoop(){
@@ -231,7 +297,7 @@ function showGame(){
     document.getElementById("startwrapper").style.display = "none";
     createPlayer();
     buildRequest = requestAnimationFrame(buildLoop);
-
+    document.body.scrollTop = document.documentElement.scrollTop = 0;
 }
 function cancelPlay(){
     window.cancelAnimationFrame(playRequest);

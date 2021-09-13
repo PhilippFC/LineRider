@@ -1,5 +1,5 @@
 body{
-    height:100vh;
+    min-height:100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -17,6 +17,10 @@ html, body{
 body, p, h1, h2, h3{
     margin:0;
     cursor: default;
+}
+img{
+    max-width: 50%;
+    margin:2em;
 }
 button{
     border-radius: 5px;
@@ -48,6 +52,7 @@ button:focus{
     display:none;
 }
 canvas{
+    margin-top:2em;
     cursor:pointer;
     border: 2px solid black;
     box-sizing: border-box;
