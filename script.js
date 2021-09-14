@@ -64,13 +64,18 @@ class Vector{
         // console.log(this.x * v.x + this.y * v.y);
         return this.x * v.x + this.y * v.y;
     }
+    draw(p){
+        ctx.beginPath();
+        ctx.moveTo(p.pos.x, p.pos.y);
+        ctx.lineTo(this.x + p.pos.x,this.y + p.pos.y);
+        ctx.closePath();    
+        ctx.stroke();
+    }
 }
 function radToDeg(radians){
   return radians * (180/Math.PI); 
 }
-
 ////////////////PlayerLogic/////////////////////
-
 class Player{
     constructor(x,y,r,velx,vely,aclx,acly,c){
         this.x =  x;
@@ -87,7 +92,7 @@ class Player{
         this.acly = acly;
         this.acl = new Vector(aclx,acly);
         this.maxVel = 30;
-        this.brems = -0.9;
+        this.bremse = -0.9;
         this.c = c;
         
     }
@@ -98,6 +103,15 @@ class Player{
 
         this.pos.x += this.vel.x ;
         this.pos.y += this.vel.y ;
+
+
+        lines.forEach((line) =>{
+            if(debug)line.drawCPV(p);
+            if(line.check4Colwith(p)){
+                this.vel.y *= this.bremse;
+                line.fixPenetration();
+            }
+        });
 
 
         //checks for Walls
@@ -118,58 +132,30 @@ class Player{
         ctx.beginPath();
         ctx.arc(this.pos.x,this.pos.y, this.r, 0, 2 * Math.PI, false);
         ctx.fillStyle = this.c;
-        ctx.fill();
+        if(!debug)ctx.fill();
         ctx.lineWidth = 1;
         ctx.strokeStyle = 'black';
         ctx.stroke();
-
         if(debug){
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(this.A.x, this.A.y);
-            ctx.lineTo(p.pos.x,p.pos.y);
-            ctx.closePath();  
-            ctx.stroke();  
+            this.vel.draw(this);
+            this.acl.draw(this);
         }
-
     }
-
-    checkCollisions(){
-        lines.forEach((line) => {//durch arrowfunction ist this das Playerobjekt
-            // line.collide(this);
-        });
-    }
-    rotate(){
-
-    }
-
 }
 function createPlayer(){
-    p = new Player(100,100,25,0,1,0,0.5,"#4b6584");
+    p = new Player(100,100,25,1,1,0,0.5,"#4b6584");
 }
-
 //////////////////////Line/////////////////////
-
 class Line{
     constructor(event){
         this.A = getMousePos(event);
         this.B = this.A;
-
-        //Vektoren zwischen Punkten A,B und Player (P)
-        this.AB = new Vector(); 
-        this.AP = new Vector();
-        this.BP = new Vector();
-
-
     }
     draw(){
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = '#141E30';
-        
-        // ctx.fillRect(this.A.x-5,this.A.y-5,10,10);
-        // ctx.fillRect(this.B.x-5,this.B.y-5,10,10);
-
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#141E30';        
+        if(debug)ctx.fillRect(this.A.x-5,this.A.y-5,10,10);
+        if(debug)ctx.fillRect(this.B.x-5,this.B.y-5,10,10);
         ctx.beginPath();
         ctx.moveTo(this.A.x, this.A.y);
         ctx.lineTo(this.B.x,this.B.y);
@@ -194,10 +180,12 @@ class Line{
             ctx.stroke();  
         }
     }
+    lineUnitVec(){
+        return this.B.subtract(this.A).unit();
+    }
     setEnd(event){
         this.B = getMousePos(event); 
     }
-
     drawCPV(p){
         ctx.strokeStyle = 'blue';
         ctx.lineWidth = 2;
@@ -207,43 +195,30 @@ class Line{
         ctx.closePath();  
         ctx.stroke();  
     }
- 
     closestPointTo(p){
-
         let PzuA = this.A.subtract(p.pos);
         if(this.lineUnitVec().dotProduct(PzuA) > 0){
             return this.A;
         }
-
         let BzuP = p.pos.subtract(this.B); 
         if(this.lineUnitVec().dotProduct(BzuP) > 0){
             return this.B;
         }
-
         let closestDistance = this.lineUnitVec().dotProduct(PzuA);
         let closestVector = this.lineUnitVec().mult(closestDistance);
-
         return this.A.subtract(closestVector);
-
     }
-
+    
     check4Colwith(p){
         let PzuL = this.closestPointTo(p).subtract(p.pos).magnitude();
-
-        console.log(PzuL);
+        // console.log(PzuL);
         if(PzuL < p.r){
             console.log("collision");
             return true;
         }
     }
-
-    lineUnitVec(){
-        return this.B.subtract(this.A).unit();
-    }
 }
-
 ////////////////loops/////////////////////
-
 function clear(){
     ctx.clearRect(0,0,GAME_WIDTH,GAME_HEIGHT);
 }
@@ -253,9 +228,8 @@ function gameLoop(){
     p.draw();
     lines.forEach(function(line){
         line.draw()
-        if(debug)line.drawCPV(p);
-        
-        line.check4Colwith(p);
+        // if(debug)line.drawCPV(p);
+        // line.check4Colwith(p);
     });
     playRequest = requestAnimationFrame(gameLoop);
 }
@@ -263,6 +237,7 @@ function buildLoop(){
     clear();
     lines.forEach(function(line){
         line.draw()
+        if(debug)line.drawCPV(p);
     });
     p.draw();
     buildRequest = requestAnimationFrame(buildLoop);
@@ -275,12 +250,8 @@ function mouseDown(event){
         lineCount++;
         line = new Line(event);
         lines.push(line);
-    }else{
-        console.log("pop");
-        lineCount --;
-        lines.pop();
     }
-    console.log(lines);
+    if(debug)console.log(lines);
     
 }
 
@@ -347,10 +318,10 @@ function erase(){
     }
     if(lineCount > 0){
         lineCount --;
-        console.log("pop");
+        if(debug)console.log("pop");
         lines.pop();
     }
-    console.log(lines);
+    if(debug)console.log(lines);
 }
 
 const pen = document.getElementById("pen");
