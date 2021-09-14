@@ -15,12 +15,12 @@ canvas.style.background = "white";
 
 let img = new Image();
 
-let debug = true;
+let debug = false;
 
 let gameState = "build";
 let tool = "pen";
-let pos1;
-let pos2;
+let A;
+let B;
 let radius;
 let k1;
 let k2;
@@ -31,6 +31,8 @@ let endAngle;
 
 let lineCount = 0;
 const lines = [];
+
+
 /////////////////Vector/////////////
 
 class Vector{
@@ -49,6 +51,9 @@ class Vector{
     } 
     mult(n){
         return new Vector(this.x*n, this.y*n);
+    }
+    divided(n){
+        return new Vector(this.x/n,this.y/n);
     }
     normal(){
         return new Vector(-this.y,this.x).unit();
@@ -77,11 +82,9 @@ function radToDeg(radians){
 }
 ////////////////PlayerLogic/////////////////////
 class Player{
-    constructor(x,y,r,velx,vely,aclx,acly,c){
-        this.x =  x;
-        this.y = y;
+    constructor(r,velx,vely,aclx,acly,c){
         this.r = r;
-        this.pos = new Vector(this.x,this.y);
+        this.pos = new Vector(100,100);
         this.initPos = this.pos;
         this.velx = velx;
         this.vely = vely;
@@ -92,8 +95,9 @@ class Player{
         this.acly = acly;
         this.acl = new Vector(aclx,acly);
         this.maxVel = 30;
-        this.bremse = -0.9;
+        this.bremse = -0.8;
         this.c = c;
+        this.dead
         
     }
 
@@ -101,23 +105,17 @@ class Player{
         if(this.vel.x < this.maxVel) this.vel.x = this.vel.x += this.acl.x;
         if(this.vel.y < this.maxVel) this.vel.y = this.vel.y += this.acl.y;
 
-        this.pos.x += this.vel.x ;
-        this.pos.y += this.vel.y ;
-
+        this.pos = this.pos.add(this.vel);
 
         lines.forEach((line) =>{
-            if(debug)line.drawCPV(p);
-            if(line.check4Colwith(p)){
-                this.vel.y *= this.bremse;
-                line.fixPenetration();
-            }
+            line.check4Colwith(this);
         });
-
 
         //checks for Walls
         if (this.pos.y > GAME_HEIGHT - this.r) {
             this.vel.y *= this.bremse;
             this.pos.y = GAME_HEIGHT - this.r;
+            this.dead = true;
         }
         if (this.pos.x > GAME_WIDTH - this.r) {
             this.vel.x *= this.bremse;
@@ -127,6 +125,7 @@ class Player{
             this.vel.x *= this.bremse;
             this.pos.x = this.r;
         }
+
     }
     draw(){
         ctx.beginPath();
@@ -143,19 +142,23 @@ class Player{
     }
 }
 function createPlayer(){
-    p = new Player(100,100,25,1,1,0,0.5,"#4b6584");
+    p = new Player(10,0,1,0,0.5,"#4b6584");
+    // p2 = new Player(10,0,1,0,0.5,"#4b6584");
 }
 //////////////////////Line/////////////////////
 class Line{
     constructor(event){
         this.A = getMousePos(event);
         this.B = this.A;
+        this.PzuLVec;
+        this.PzuL;
     }
     draw(){
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#141E30';        
         if(debug)ctx.fillRect(this.A.x-5,this.A.y-5,10,10);
         if(debug)ctx.fillRect(this.B.x-5,this.B.y-5,10,10);
+
         ctx.beginPath();
         ctx.moveTo(this.A.x, this.A.y);
         ctx.lineTo(this.B.x,this.B.y);
@@ -208,14 +211,37 @@ class Line{
         let closestVector = this.lineUnitVec().mult(closestDistance);
         return this.A.subtract(closestVector);
     }
-    
     check4Colwith(p){
-        let PzuL = this.closestPointTo(p).subtract(p.pos).magnitude();
-        // console.log(PzuL);
-        if(PzuL < p.r){
-            console.log("collision");
+        this.PzuLVec = this.closestPointTo(p).subtract(p.pos);
+        this.PzuL = this.PzuLVec.magnitude();
+        // console.log(this.PzuL);
+        // console.log(p.r);
+        if(this.PzuL < p.r){
+            // console.log("collision");
+            this.fixPenetration(p);
+            this.newMove(p);
             return true;
         }
+    }
+    fixPenetration(p){
+        let penDepth = p.r-this.PzuL
+        let penVec = this.PzuLVec.unit().mult(penDepth);
+
+        p.pos = p.pos.add(penVec.mult(-1));
+        if(debug){
+            console.log(p.pos);
+            console.log(penVec);
+            console.log(penDepth);
+        }
+    }
+    newMove(p){
+        let responseDir = this.PzuLVec.mult(-1).unit();
+        let sepVel = p.vel.dotProduct(responseDir);
+        let newsepVel = sepVel * p.bremse;
+        let difInVel = sepVel -newsepVel;
+        p.vel = p.vel.add(responseDir.mult(-difInVel));
+        if(debug)console.log("responseDir");        
+        if(debug)console.log(responseDir);
     }
 }
 ////////////////loops/////////////////////
@@ -223,15 +249,23 @@ function clear(){
     ctx.clearRect(0,0,GAME_WIDTH,GAME_HEIGHT);
 }
 function gameLoop(){
-    clear();
-    p.move();
-    p.draw();
-    lines.forEach(function(line){
-        line.draw()
-        // if(debug)line.drawCPV(p);
-        // line.check4Colwith(p);
-    });
-    playRequest = requestAnimationFrame(gameLoop);
+    if(!p.dead){
+        clear();
+        lines.forEach((line) =>{
+            line.draw();
+            if(debug)line.drawCPV(p);
+            // line.check4Colwith(p);
+        });
+        p.move();
+        p.draw();
+
+        
+        playRequest = requestAnimationFrame(gameLoop);
+    }
+    else{
+        window.alert("You died");
+        buildState();
+    }
 }
 function buildLoop(){
     clear();
@@ -334,3 +368,4 @@ curver.addEventListener("click", function(){
 });
 const eraser = document.getElementById("eraser");
 eraser.addEventListener("click", erase);
+showGame();
