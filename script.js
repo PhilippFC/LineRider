@@ -15,6 +15,8 @@ canvas.style.background = "white";
 
 let img = new Image();
 
+let debug = true;
+
 let gameState = "build";
 let tool = "pen";
 let pos1;
@@ -62,14 +64,12 @@ class Vector{
         // console.log(this.x * v.x + this.y * v.y);
         return this.x * v.x + this.y * v.y;
     }
-    
 }
 function radToDeg(radians){
   return radians * (180/Math.PI); 
 }
 
 ////////////////PlayerLogic/////////////////////
-
 
 class Player{
     constructor(x,y,r,velx,vely,aclx,acly,c){
@@ -87,7 +87,7 @@ class Player{
         this.acly = acly;
         this.acl = new Vector(aclx,acly);
         this.maxVel = 30;
-        this.bremse = -0.1;
+        this.brems = -0.9;
         this.c = c;
         
     }
@@ -122,6 +122,17 @@ class Player{
         ctx.lineWidth = 1;
         ctx.strokeStyle = 'black';
         ctx.stroke();
+
+        if(debug){
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.A.x, this.A.y);
+            ctx.lineTo(p.pos.x,p.pos.y);
+            ctx.closePath();  
+            ctx.stroke();  
+        }
+
     }
 
     checkCollisions(){
@@ -150,8 +161,6 @@ class Line{
         this.AP = new Vector();
         this.BP = new Vector();
 
-        //Winkel zwischen Vektoren 
-        this.PAB;
 
     }
     draw(){
@@ -167,22 +176,23 @@ class Line{
         ctx.closePath();    
         ctx.stroke();
 
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(this.A.x, this.A.y);
-        ctx.lineTo(p.pos.x,p.pos.y);
-        ctx.closePath();  
-        ctx.stroke();  
-        
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(this.B.x, this.B.y);
-        ctx.lineTo(p.pos.x,p.pos.y);
-        ctx.closePath();  
-        ctx.stroke();  
-
+        if(debug){
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.A.x, this.A.y);
+            ctx.lineTo(p.pos.x,p.pos.y);
+            ctx.closePath();  
+            ctx.stroke();  
+            
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.B.x, this.B.y);
+            ctx.lineTo(p.pos.x,p.pos.y);
+            ctx.closePath();  
+            ctx.stroke();  
+        }
     }
     setEnd(event){
         this.B = getMousePos(event); 
@@ -192,13 +202,13 @@ class Line{
         ctx.strokeStyle = 'blue';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(this.closestWayTo(p).x,this.closestWayTo(p).y);
+        ctx.moveTo(this.closestPointTo(p).x,this.closestPointTo(p).y);
         ctx.lineTo(p.pos.x,p.pos.y);
         ctx.closePath();  
         ctx.stroke();  
     }
  
-    closestWayTo(p){
+    closestPointTo(p){
 
         let PzuA = this.A.subtract(p.pos);
         if(this.lineUnitVec().dotProduct(PzuA) > 0){
@@ -218,8 +228,10 @@ class Line{
     }
 
     check4Colwith(p){
-        console.log(this.closestWayTo(p).magnitude());
-        if(this.closestWayTo(p).magnitude() < p.r){
+        let PzuL = this.closestPointTo(p).subtract(p.pos).magnitude();
+
+        console.log(PzuL);
+        if(PzuL < p.r){
             console.log("collision");
             return true;
         }
@@ -228,13 +240,6 @@ class Line{
     lineUnitVec(){
         return this.B.subtract(this.A).unit();
     }
-
-    // collide(p){
-    //     this.AB = this.B.subtract(this.A);
-    //     this.AP = p.pos.subtract(this.A);
-    //     this.BP = p.pos.subtract(this.B);
-        
-    // }
 }
 
 ////////////////loops/////////////////////
@@ -248,7 +253,8 @@ function gameLoop(){
     p.draw();
     lines.forEach(function(line){
         line.draw()
-        line.drawCPV(p);
+        if(debug)line.drawCPV(p);
+        
         line.check4Colwith(p);
     });
     playRequest = requestAnimationFrame(gameLoop);
