@@ -4,8 +4,8 @@ const ctx = canvas.getContext("2d");
 let playRequest;
 let buildRequest;
 
-const GAME_WIDTH = 600;
-const GAME_HEIGHT = 400;
+const GAME_WIDTH = "600";
+const GAME_HEIGHT = "400";
 
 canvas.width = GAME_WIDTH;
 canvas.height = GAME_HEIGHT;
@@ -21,13 +21,6 @@ let gameState = "build";
 let tool = "pen";
 let A;
 let B;
-let radius;
-let k1;
-let k2;
-let alpha;
-let beta;
-let startAngle;
-let endAngle;
 
 let lineCount = 0;
 const lines = [];
@@ -368,4 +361,5 @@ curver.addEventListener("click", function(){
 });
 const eraser = document.getElementById("eraser");
 eraser.addEventListener("click", erase);
+
 showGame();
