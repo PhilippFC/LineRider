@@ -88,7 +88,7 @@ class Player{
         this.acly = acly;
         this.acl = new Vector(aclx,acly);
         this.maxVel = 30;
-        this.bremse = -0.8;
+        this.bremse = -0.1;
         this.c = c;
         this.dead
         
@@ -296,13 +296,7 @@ canvas.addEventListener("mousedown",mouseDown);
 canvas.addEventListener("mouseup",mouseUp);
 
 /////////////////State & Button Logic////////////////////
-function showGame(){
-    document.getElementById("hidewrapper").style.display = "block";
-    document.getElementById("startwrapper").style.display = "none";
-    createPlayer();
-    buildRequest = requestAnimationFrame(buildLoop);
-    document.body.scrollTop = document.documentElement.scrollTop = 0;
-}
+
 function cancelPlay(){
     window.cancelAnimationFrame(playRequest);
 }
@@ -335,7 +329,6 @@ function stopState(){
 document.getElementById("buildButton").addEventListener("click",buildState);
 document.getElementById("playButton").addEventListener("click",playState);
 document.getElementById("stopButton").addEventListener("click",stopState);
-document.getElementById("startButton").addEventListener("click",showGame);
 
 ////////////////////Tools//////////////////////////////
 function erase(){
@@ -361,5 +354,3 @@ curver.addEventListener("click", function(){
 });
 const eraser = document.getElementById("eraser");
 eraser.addEventListener("click", erase);
-
-showGame();

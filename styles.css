@@ -30,7 +30,7 @@ button{
     font-family: 'Noto Sans KR', sans-serif;
     font-weight: 400;
     background:#d1d8e0;
-    color: ##4b6584;
+    color:#4b6584;
 }
 button:focus{
     background:#4b6584;
@@ -42,14 +42,17 @@ button:focus{
     color:white;
     
 }
-.startwrapper{
+#startwrapper{
+    position:relative;
     display:flex;
     justify-content: center;
+    flex-direction: column;
     align-items: center;
 }
 #hidewrapper{
-    top:2em;
-    display:none;
+    opacity:0%;
+    position: absolute;
+    top:30em;
 }
 canvas{
     margin-top:2em;
