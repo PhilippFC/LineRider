@@ -243,7 +243,6 @@ function gameLoop() {
         lines.forEach((line) => {
             line.draw();
             if (debug) line.drawCPV(p);
-            line.check4Colwith(p);
         });
         p.move();
         p.draw();
