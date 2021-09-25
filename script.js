@@ -12,18 +12,23 @@ canvas.style.width = GAME_WIDTH + "px";
 canvas.style.height = GAME_HEIGHT + "px";
 canvas.style.background = "white";
 
-let img = new Image();
-
 let debug = false;
 
+let curMousePos;
 let gameState = "build";
 let tool = "pen";
-let A;
-let B;
 
 let lineCount = 0;
 const lines = [];
+let freehandCount;
 
+class Board {
+    draw() {
+        ctx.font = "16px 'Noto Sans KR', sans-serif ";
+        if (debug) ctx.fillText("LineCount: " + lineCount, 5, 20);
+    }
+}
+const b = new Board();
 /////////////////Vector/////////////
 class Vector {
     constructor(x, y) {
@@ -82,7 +87,7 @@ class Player {
         this.acly = acly;
         this.acl = new Vector(aclx, acly);
         this.maxVel = 30;
-        this.bremse = -0.1;
+        this.bremse = -0.2;
         this.c = c;
         this.dead
 
@@ -135,24 +140,23 @@ function createPlayer() {
 }
 //////////////////////Line/////////////////////
 class Line {
-    constructor(event) {
-        this.A = getMousePos(event);
-        this.B = this.A;
+    constructor(MP, tool) {
+        this.tool = tool;
+        this.A = MP;
+        this.B = MP;
         this.PzuLVec;
         this.PzuL;
     }
     draw() {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#141E30';
-        if (debug) ctx.fillRect(this.A.x - 5, this.A.y - 5, 10, 10);
-        if (debug) ctx.fillRect(this.B.x - 5, this.B.y - 5, 10, 10);
-
-        ctx.beginPath();
-        ctx.moveTo(this.A.x, this.A.y);
-        ctx.lineTo(this.B.x, this.B.y);
-        ctx.closePath();
-        ctx.stroke();
-
+        if (this.tool !== "eraser") {
+            ctx.beginPath();
+            ctx.moveTo(this.A.x, this.A.y);
+            ctx.lineTo(this.B.x, this.B.y);
+            ctx.closePath();
+            ctx.stroke();
+        }
         if (debug) {
             ctx.strokeStyle = 'red';
             ctx.lineWidth = 2;
@@ -171,11 +175,11 @@ class Line {
             ctx.stroke();
         }
     }
+    setEnd(MP) {
+        this.B = MP;
+    }
     lineUnitVec() {
         return this.B.subtract(this.A).unit();
-    }
-    setEnd(event) {
-        this.B = getMousePos(event);
     }
     drawCPV(p) {
         ctx.strokeStyle = 'blue';
@@ -217,9 +221,9 @@ class Line {
 
         p.pos = p.pos.add(penVec.mult(-1));
         if (debug) {
-            console.log(p.pos);
-            console.log(penVec);
-            console.log(penDepth);
+            // console.log(p.pos);
+            // console.log(penVec);
+            // console.log(penDepth);
         }
     }
     newMove(p) {
@@ -228,8 +232,8 @@ class Line {
         let newsepVel = sepVel * p.bremse;
         let difInVel = sepVel - newsepVel;
         p.vel = p.vel.add(responseDir.mult(-difInVel));
-        if (debug) console.log("responseDir");
-        if (debug) console.log(responseDir);
+        // if (debug) console.log("responseDir");
+        // if (debug) console.log(responseDir);
     }
 }
 ////////////////loops/////////////////////
@@ -238,24 +242,24 @@ function clear() {
 }
 
 function gameLoop() {
-    if (!p.dead) {
-        clear();
-        lines.forEach((line) => {
-            line.draw();
-            if (debug) line.drawCPV(p);
-        });
-        p.move();
-        p.draw();
-        playRequest = requestAnimationFrame(gameLoop);
-    } else {
-        window.alert("You died");
-        buildState();
-    }
+    // if (!p.dead) {
+    clear();
+    lines.forEach((line) => {
+        line.draw();
+        if (debug) line.drawCPV(p);
+    });
+    p.move();
+    p.draw();
+    b.draw();
+    playRequest = requestAnimationFrame(gameLoop);
+    // } else {
+    // window.alert("You died");
+    // buildState();
+    // }
 }
 
 function buildLoop() {
     clear();
-    console.log("building");
     lines.forEach(function(line) {
         line.draw()
         if (debug) line.drawCPV(p);
@@ -265,22 +269,46 @@ function buildLoop() {
 }
 
 ////////////////////// Drawing / Utilities ///////////////////////
+let timer;
+
 function mouseDown(event) {
-    if (gameState !== "build") return;
-    if (tool !== "eraser") {
+    // if (gameState !== "build") return;
+    freehandCount = 0;
+    if (tool === "pen") {
         lineCount++;
-        line = new Line(event);
+        line = new Line(curMousePos, tool);
         lines.push(line);
     }
-    if (debug) console.log(lines);
+    if (tool === "freehand") {
+        //Loop starten die lines beginnt und beendet
+        timer = setInterval(function() {
+            //beendet Line von der vorigen Loop
+            if (freehandCount > 0) {
+                lines[lineCount - 1].setEnd(curMousePos);
+            }
+            //startet neue Line;
+            lineCount++;
+            freehandCount++;
+            line = new Line(curMousePos, "freehand");
+            lines.push(line);
+            console.log(lines);
+        }, 50);
 
+    }
+    if (debug) console.log(lines);
 }
+
 
 function mouseUp(event) {
+    clearInterval(timer);
     if (gameState !== "build") return;
-    lines[lineCount - 1].setEnd(event);
-    lines[lineCount - 1].draw();
+    if (tool === "pen") lines[lineCount - 1].setEnd(curMousePos);
 }
+
+canvas.addEventListener("mousemove", function(event) {
+    curMousePos = getMousePos(event);
+    // console.log(currentMousePos);
+});
 
 function getMousePos(event) {
     const rect = canvas.getBoundingClientRect();
@@ -329,7 +357,19 @@ document.getElementById("playButton").addEventListener("click", playState);
 document.getElementById("stopButton").addEventListener("click", stopState);
 
 ////////////////////Tools//////////////////////////////
-function erase() {
+
+
+document.getElementById("pen").addEventListener("click", function() {
+    tool = "pen";
+    console.log(tool);
+
+});
+document.getElementById("freehand").addEventListener("click", function() {
+    tool = "freehand";
+    freehandCount = 0;
+    console.log(tool);
+});
+document.getElementById("erase").addEventListener("click", function() {
     if (gameState !== "build") {
         alert("not in Buildmode");
         return;
@@ -340,16 +380,15 @@ function erase() {
         lines.pop();
     }
     if (debug) console.log(lines);
-}
+});
+document.getElementById("eraseAll").addEventListener("click", function() {
+    if (gameState !== "build") {
+        alert("are you sure you want to erase your track?");
+        return;
+    }
+    lines.splice(0, lines.length);
+    lineCount = 0;
 
-const pen = document.getElementById("pen");
-pen.addEventListener("click", function() {
-    tool = "pen";
+    if (debug) console.log(lines);
 });
-const curver = document.getElementById("curver");
-curver.addEventListener("click", function() {
-    tool = "curver";
-});
-const eraser = document.getElementById("eraser");
-eraser.addEventListener("click", erase);
 buildState();

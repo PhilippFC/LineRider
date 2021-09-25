@@ -13,11 +13,6 @@ $(document).ready(function() {
             top: "2em",
             opacity: "100%",
         });
-
-
-
         // document.getElementById("hidewrapper").style.display = "block";
     });
-
-
 });
