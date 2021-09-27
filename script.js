@@ -13,6 +13,7 @@ canvas.style.height = GAME_HEIGHT + "px";
 canvas.style.background = "white";
 
 let debug = false;
+let pl2 = false;
 
 let curMousePos;
 let gameState = "build";
@@ -22,13 +23,7 @@ let lineCount = 0;
 const lines = [];
 let freehandCount;
 
-class Board {
-    draw() {
-        ctx.font = "16px 'Noto Sans KR', sans-serif ";
-        if (debug) ctx.fillText("LineCount: " + lineCount, 5, 20);
-    }
-}
-const b = new Board();
+
 /////////////////Vector/////////////
 class Vector {
     constructor(x, y) {
@@ -74,9 +69,9 @@ class Vector {
 }
 ////////////////PlayerLogic/////////////////////
 class Player {
-    constructor(r, velx, vely, aclx, acly, c) {
+    constructor(xPos, yPos, r, velx, vely, aclx, acly, c, bremse) {
         this.r = r;
-        this.pos = new Vector(100, 100);
+        this.pos = new Vector(xPos, yPos);
         this.initPos = this.pos;
         this.velx = velx;
         this.vely = vely;
@@ -87,7 +82,7 @@ class Player {
         this.acly = acly;
         this.acl = new Vector(aclx, acly);
         this.maxVel = 30;
-        this.bremse = -0.2;
+        this.bremse = bremse;
         this.c = c;
         this.dead
 
@@ -135,8 +130,8 @@ class Player {
 }
 
 function createPlayer() {
-    p = new Player(10, 0, 1, 0, 0.5, "#4b6584");
-    // p2 = new Player(10,0,1,0,0.5,"#4b6584");
+    p = new Player(100, 100, 10, 0, 1, 0, 0.5, "#4b6584", -0.2);
+    p2 = new Player(200, 100, 30, 0, 1, 0, 0.5, "#4b6584", -0.5);
 }
 //////////////////////Line/////////////////////
 class Line {
@@ -236,6 +231,13 @@ class Line {
         // if (debug) console.log(responseDir);
     }
 }
+class Board {
+    draw() {
+        ctx.font = "16px 'Noto Sans KR', sans-serif ";
+        if (debug) ctx.fillText("LineCount: " + lineCount, 5, 20);
+    }
+}
+const b = new Board();
 ////////////////loops/////////////////////
 function clear() {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -250,6 +252,10 @@ function gameLoop() {
     });
     p.move();
     p.draw();
+    if (pl2) {
+        p2.move();
+        p2.draw();
+    }
     b.draw();
     playRequest = requestAnimationFrame(gameLoop);
     // } else {
@@ -265,6 +271,7 @@ function buildLoop() {
         if (debug) line.drawCPV(p);
     });
     p.draw();
+    if (pl2) p2.draw();
     buildRequest = requestAnimationFrame(buildLoop);
 }
 
